@@ -19,65 +19,58 @@ public class U2018Compatible
     [Filter]
     static BindingMode Filter(MemberInfo memberInfo)
     {
-        try
+        if (memberInfo.DeclaringType.IsGenericType && memberInfo.DeclaringType.GetGenericTypeDefinition() == typeof(Dictionary<,>))
         {
-            if (memberInfo.DeclaringType.IsGenericType && memberInfo.DeclaringType.GetGenericTypeDefinition() == typeof(Dictionary<,>))
+            if (memberInfo.MemberType == MemberTypes.Constructor)
             {
-                if (memberInfo.MemberType == MemberTypes.Constructor)
+                ConstructorInfo constructorInfo = memberInfo as ConstructorInfo;
+                var parameterInfos = constructorInfo.GetParameters();
+                if (parameterInfos.Length > 0)
                 {
-                    ConstructorInfo constructorInfo = memberInfo as ConstructorInfo;
-                    var parameterInfos = constructorInfo.GetParameters();
-                    if (parameterInfos.Length > 0)
-                    {
-                        if (typeof(System.Collections.IEnumerable).IsAssignableFrom(parameterInfos[0].ParameterType))
-                        {
-                            return BindingMode.DontBinding;
-                        }
-                    }
-                }
-                else if (memberInfo.MemberType == MemberTypes.Method)
-                {
-                    var methodInfo = memberInfo as MethodInfo;
-                    if (methodInfo.Name == "TryAdd" || methodInfo.Name == "Remove" && methodInfo.GetParameters().Length == 2)
+                    if (typeof(System.Collections.IEnumerable).IsAssignableFrom(parameterInfos[0].ParameterType))
                     {
                         return BindingMode.DontBinding;
                     }
                 }
             }
-            if (memberInfo.DeclaringType.IsGenericType && memberInfo.DeclaringType.GetGenericTypeDefinition() == typeof(HashSet<>))
+            else if (memberInfo.MemberType == MemberTypes.Method)
             {
-                if (memberInfo.MemberType == MemberTypes.Constructor)
+                var methodInfo = memberInfo as MethodInfo;
+                if (methodInfo.Name == "TryAdd" || methodInfo.Name == "Remove" && methodInfo.GetParameters().Length == 2)
                 {
-                    ConstructorInfo constructorInfo = memberInfo as ConstructorInfo;
-                    var parameterInfos = constructorInfo.GetParameters();
-                    if (parameterInfos.Length > 0 && parameterInfos[0].ParameterType == typeof(int))
-                    {
-                        return BindingMode.DontBinding;
-                    }
-                }
-                else if (memberInfo.MemberType == MemberTypes.Method)
-                {
-                    var methodInfo = memberInfo as MethodInfo;
-                    if (methodInfo.Name == "TryGetValue" && methodInfo.GetParameters().Length == 2)
-                    {
-                        return BindingMode.DontBinding;
-                    }
+                    return BindingMode.DontBinding;
                 }
             }
-            if (memberInfo.DeclaringType.ToString() == "System.Type" && memberInfo.Name == "IsSZArray")
-            {
-                return BindingMode.DontBinding;
-            }
-            if (memberInfo.DeclaringType.ToString() == "System.Threading.Tasks.Task" && memberInfo.Name == "IsCompletedSuccessfully")
-            {
-                return BindingMode.DontBinding;
-            }
-            return BindingMode.FastBinding;
         }
-        catch
+        if (memberInfo.DeclaringType.IsGenericType && memberInfo.DeclaringType.GetGenericTypeDefinition() == typeof(HashSet<>))
+        {
+            if (memberInfo.MemberType == MemberTypes.Constructor)
+            {
+                ConstructorInfo constructorInfo = memberInfo as ConstructorInfo;
+                var parameterInfos = constructorInfo.GetParameters();
+                if (parameterInfos.Length > 0 && parameterInfos[0].ParameterType == typeof(int))
+                {
+                    return BindingMode.DontBinding;
+                }
+            }
+            else if (memberInfo.MemberType == MemberTypes.Method)
+            {
+                var methodInfo = memberInfo as MethodInfo;
+                if (methodInfo.Name == "TryGetValue" && methodInfo.GetParameters().Length == 2)
+                {
+                    return BindingMode.DontBinding;
+                }
+            }
+        }
+        if (memberInfo.DeclaringType.ToString() == "System.Type" && memberInfo.Name == "IsSZArray")
         {
             return BindingMode.DontBinding;
         }
+        if (memberInfo.DeclaringType.ToString() == "System.Threading.Tasks.Task" && memberInfo.Name == "IsCompletedSuccessfully")
+        {
+            return BindingMode.DontBinding;
+        }
+        return BindingMode.FastBinding;
     }
 #endif
 }

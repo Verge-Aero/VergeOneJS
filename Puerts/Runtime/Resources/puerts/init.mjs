@@ -12,51 +12,22 @@ global.global = global;
 let puer = global.puer = global.puerts = global.puer || global.puerts || {};
 
 puer.loadType = global.__tgjsLoadType;
-global.__tgjsLoadType = undefined;
+delete global.__tgjsLoadType;
 puer.getNestedTypes = global.__tgjsGetNestedTypes;
-global.__tgjsGetNestedTypes = undefined;
-//puer.getGenericMethod = global.__tgjsGetGenericMethod;
-global.__tgjsGetGenericMethod = undefined;
-puer.createFunction = global.createFunction;
-global.createFunction = undefined;
-
-puer.getGenericMethod = function(csType, methodName, ...genericArgs) {
-    if (!csType || (typeof csType.GetMember != 'function')) {
-        throw new Error('the class must be a constructor');
-    }
-    let members = CS.Puerts.Utils.GetMethodAndOverrideMethodByName(csType, methodName);
-    let overloadFunctions = [];
-    for (let i = 0; i < members.Length; i++) {
-        let method = members.GetValue(i)
-        if (method.IsGenericMethodDefinition && method.GetGenericArguments().Length == genericArgs.length) {
-            let methodImpl = method.MakeGenericMethod(...genericArgs.map((x, index) => {
-                const ret = puer.$typeof(x);
-                if (!ret) {
-                    throw new Error("invalid Type for generic arguments " + index);
-                }
-                return ret;
-            }))
-            overloadFunctions.push(methodImpl)
-        }
-    }
-    let overloadCount = overloadFunctions.length
-    if (overloadCount == 0) {
-        console.error("puer.getGenericMethod not found", csType.Name, methodName, genericArgs.map(x => puer.$typeof(x).Name).join(","))
-        return null
-    }
-    return puer.createFunction(...overloadFunctions);
-}
+delete global.__tgjsGetNestedTypes;
+puer.getGenericMethod = global.__tgjsGetGenericMethod;
+delete global.__tgjsGetGenericMethod;
 
 puer.evalScript = global.__tgjsEvalScript || function (script, debugPath) {
     return eval(script);
 }
-global.__tgjsEvalScript = undefined;
+delete global.__tgjsEvalScript;
 
 puer.getLastException = global.__puertsGetLastException
-global.__puertsGetLastException = undefined;
+delete global.__puertsGetLastException;
 
 let loader = global.__tgjsGetLoader();
-global.__tgjsGetLoader = undefined;
+delete global.__tgjsGetLoader;
 
 function loadFile(path) {
     let debugPath = [];

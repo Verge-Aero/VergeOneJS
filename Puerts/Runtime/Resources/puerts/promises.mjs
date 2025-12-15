@@ -13,7 +13,7 @@ const kPromiseRejectAfterResolved = 2;
 const kPromiseResolveAfterResolved = 3;
 
 global.__tgjsSetPromiseRejectCallback(promiseRejectHandler)
-global.__tgjsSetPromiseRejectCallback = undefined;;
+delete global.__tgjsSetPromiseRejectCallback;
 
 const maybeUnhandledRejection = new WeakMap();
 
@@ -44,7 +44,6 @@ function unhandledRejection(promise, reason) {
     if (promiseInfo === undefined) {
         return;
     }
-    maybeUnhandledRejection.delete(promise);
     if (!puer.emit('unhandledRejection', promiseInfo.reason, promise)) {
         unhandledRejectionWarning(reason);
     }
