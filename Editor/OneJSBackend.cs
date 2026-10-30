@@ -7,13 +7,13 @@ using UnityEngine;
 namespace OneJS.Editor {
     public class OneJSBackend {
         public static string GetCurrentBackend() {
-            int i = PuertsDLL.GetLibBackend((IntPtr)0);
-            switch (i) {
-                case 0:
+            switch (JsEnv.DefaultBackendType) {
+                case BackendType.Auto:
+                case BackendType.V8:
                     return "V8";
-                case 1:
+                case BackendType.Node:
                     return "NodeJS";
-                case 2:
+                case BackendType.QuickJS:
                     return "QuickJS";
                 default:
                     return "Unknown";
@@ -25,11 +25,15 @@ namespace OneJS.Editor {
                 Debug.Log("You are already using " + backend + " backend. No need to switch.");
                 return;
             }
-            if (EditorUtility.DisplayDialog("Unity Editor needs to be closed",
-                    "We can't reliably unload the native plugin while the Unity Editor is running. Please close the Unity Editor and use `npm run switch " + backend.ToLower() + "` in the terminal to switch the backend.",
-                    "Okay", "Cancel")) {
+            string typeName = backend == "NodeJS" ? "BackendNodeJS" : "Backend" + backend;
+            string assembly = backend == "NodeJS" ? "nodejs" : backend.ToLowerInvariant();
+            if (Type.GetType("Puerts." + typeName + ", com.tencent.puerts." + assembly) == null) {
+                Debug.LogError("Install the matching PuerTS 3.0.3 " + backend + " backend package before selecting it.");
+                return;
             }
-            // EditorApplication.OpenProject(Directory.GetCurrentDirectory());
+            JsEnv.DefaultBackendType = backend == "NodeJS" ? BackendType.Node :
+                (BackendType)Enum.Parse(typeof(BackendType), backend);
+            Debug.Log("OneJS will use " + backend + " for newly created script environments.");
         }
     }
 }

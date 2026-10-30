@@ -60,10 +60,10 @@ namespace OneJS.Editor {
         /// <exception cref="ArgumentNullException"></exception>
         /// <exception cref="NotSupportedException"></exception>
         /// <exception cref="ArgumentException"></exception>
-        public Action subscribe(object eventSource, string eventName, GenericDelegate handler) {
+        public Action subscribe(object eventSource, string eventName, ScriptObject handler) {
             if (eventSource is null) {
                 throw new ArgumentNullException(nameof(eventSource), "[SubscribeEvent] Event source is null.");
-            } else if (eventSource is JSObject) {
+            } else if (eventSource is ScriptObject) {
                 throw new NotSupportedException("[SubscribeEvent] Cannot subscribe event on JS value.");
             }
 
@@ -100,7 +100,7 @@ namespace OneJS.Editor {
             }
         }
 
-        public Action subscribe(string eventName, GenericDelegate handler) => subscribe(this, eventName, handler);
+        public Action subscribe(string eventName, ScriptObject handler) => subscribe(this, eventName, handler);
 
         /// <summary>
         /// Use for event cleanup

@@ -1,12 +1,9 @@
 /*
 * Tencent is pleased to support the open source community by making Puerts available.
-* Copyright (C) 2020 THL A29 Limited, a Tencent company.  All rights reserved.
+* Copyright (C) 2020 Tencent.  All rights reserved.
 * Puerts is licensed under the BSD 3-Clause License, except for the third-party components listed in the file 'LICENSE' which may be subject to their corresponding license terms. 
 * This file is subject to the terms and conditions defined in file 'LICENSE', which is part of this source code package.
 */
-
-#if UNITY_2020_1_OR_NEWER
-#if EXPERIMENTAL_IL2CPP_PUERTS || UNITY_EDITOR || PUERTS_GENERAL
 
 using System;
 using System.Reflection;
@@ -14,50 +11,197 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
 
-namespace PuertsIl2cpp
+namespace Puerts
 {
 	public static class ExtensionMethodInfo
 	{
-        private static Type GetExtendedType(MethodInfo method)
+        internal static Type GetExtendedType(MethodInfo method)
         {
+            var paramInfo = method.GetParameters();
+            if (paramInfo.Length == 0)
+            {
+                return null;
+            }
+            if (method.GetCustomAttribute<ExtensionAttribute>() == null)
+            {
+                return null;
+            }
             var type = method.GetParameters()[0].ParameterType;
             if (!type.IsGenericParameter)
                 return type;
             var parameterConstraints = type.GetGenericParameterConstraints();
             if (parameterConstraints.Length == 0)
-                throw new InvalidOperationException();
+            {
+                return null;
+            }
             var firstParameterConstraint = parameterConstraints[0];
             if (!firstParameterConstraint.IsClass)
-                throw new InvalidOperationException();
+            {
+                return null;
+            }
             return firstParameterConstraint;
         }
         
         // Call By Gen Code
-        public static IEnumerable<MethodInfo> GetExtensionMethods(Type type, params Type[] extensions)
+        public static MethodInfo[] GetExtensionMethods(Type type, params Type[] extensions)
         {
-            return from e in extensions from m in e.GetMethods(BindingFlags.Static | BindingFlags.Public) 
-                where !m.IsSpecialName && GetExtendedType(m) == type select m;
+            return (from e in extensions from m in e.GetMethods(BindingFlags.Static | BindingFlags.Public) 
+                where !m.IsSpecialName && GetExtendedType(m) == type select m).ToArray();
         }
 
-        public static IEnumerable<MethodInfo> Get(Type type)
+        [UnityEngine.Scripting.Preserve]
+        public static MethodInfo[] Get(string assemblyQualifiedName)
         {
             if (LoadExtensionMethod != null)
-                return LoadExtensionMethod(type);
+                return LoadExtensionMethod(assemblyQualifiedName);
             return null;
         }
 
-        public static Func<Type, IEnumerable<MethodInfo>> LoadExtensionMethod;
+        public static Func<string, MethodInfo[]> LoadExtensionMethod;
+
+        private static volatile Dictionary<Type, MethodInfo[]> extensionMethodMap = null;
+
+        static MethodInfo[] EmptyMethodInfos = new MethodInfo[] { };
+
+        public static MethodInfo[] ReflectionGetExtensionMethodsOf(string typeName)
+        {
+            Type type_to_be_extend = Type.GetType(typeName);
+            if (type_to_be_extend == null) return EmptyMethodInfos;
+            if (extensionMethodMap == null)
+            {
+                List<Type> type_def_extention_method = new List<Type>();
+
+                IEnumerator<Type> enumerator = GetAllTypes().GetEnumerator();
+
+                while (enumerator.MoveNext())
+                {
+                    Type type = enumerator.Current;
+                    if (type.IsDefined(typeof(ExtensionAttribute), false))
+                    {
+                        type_def_extention_method.Add(type);
+                    }
+                }
+                enumerator.Dispose();
+
+                extensionMethodMap = (from type in type_def_extention_method.Distinct()
+                                                         // #if UNITY_EDITOR
+                                                         //                                       where !type.Assembly.Location.Contains("Editor")
+                                                         // #endif
+                                                     from method in type.GetMethods(BindingFlags.Static | BindingFlags.Public)
+                                                     where method.IsDefined(typeof(ExtensionAttribute), false) && IsSupportedMethod(method)
+                                                     group method by GetExtendedType(method)).Where(g => g.Key != null).ToDictionary(g => g.Key, g => g.ToArray());
+            }
+            MethodInfo[] ret = null;
+            extensionMethodMap.TryGetValue(type_to_be_extend, out ret);
+            return ret;
+        }
+
+        public static bool IsSupportedMethod(MethodInfo method)
+        {
+            if (!method.ContainsGenericParameters)
+                return true;
+            var methodParameters = method.GetParameters();
+            var returnType = method.ReturnType;
+            var hasValidGenericParameter = false;
+            var returnTypeValid = !returnType.IsGenericParameter;
+            // 在参数列表里找得到和泛型参数相同的参数
+            for (var i = 0; i < methodParameters.Length; i++)
+            {
+                var parameterType = methodParameters[i].ParameterType;
+                // 如果参数是泛型参数
+                if (parameterType.IsGenericParameter)
+                {
+                    // 所有参数的基类都不是值类型，且不是另一个泛型
+                    if (
+                        parameterType.BaseType != null && (
+                            parameterType.BaseType.IsValueType ||
+                            (
+                                parameterType.BaseType.IsGenericType &&
+                                !parameterType.BaseType.IsGenericTypeDefinition
+                            )
+                        )
+                    ) return false;
+                    var parameterConstraints = parameterType.GetGenericParameterConstraints();
+                    // 所有泛型参数都有值类型约束
+                    if (parameterConstraints.Length == 0) return false;
+                    foreach (var parameterConstraint in parameterConstraints)
+                    {
+                        // 所有泛型参数的类型约束都不是值类型
+                        if (parameterConstraint.IsValueType || (parameterConstraint == typeof(ValueType)))
+                            return false;
+                    }
+                    hasValidGenericParameter = true;
+                    if (!returnTypeValid)
+                    {
+                        if (parameterType == returnType)
+                        {
+                            returnTypeValid = true;
+                        }
+                    }
+                }
+            }
+            return hasValidGenericParameter && returnTypeValid;
+        }
+        public static List<Type> GetAllTypes(bool exclude_generic_definition = true)
+        {
+            List<Type> allTypes = new List<Type>();
+            var assemblies = AppDomain.CurrentDomain.GetAssemblies();
+            for (int i = 0; i < assemblies.Length; i++)
+            {
+                try
+                {
+#if (UNITY_EDITOR || PUERTS_GENERAL) && !NET_STANDARD_2_0
+                    if (!(assemblies[i].ManifestModule is System.Reflection.Emit.ModuleBuilder))
+                    {
+#endif
+                    allTypes.AddRange(assemblies[i].GetTypes()
+                        .Where(type => exclude_generic_definition ? !type.IsGenericTypeDefinition : true));
+#if (UNITY_EDITOR || PUERTS_GENERAL) && !NET_STANDARD_2_0
+                    }
+#endif
+                }
+                catch (Exception)
+                {
+                }
+            }
+
+            return allTypes;
+        }
 
         public static bool LoadExtensionMethodInfo() {
             var ExtensionMethodInfos_Gen = (from assembly in AppDomain.CurrentDomain.GetAssemblies()
-                select assembly.GetType("PuertsIl2cpp.ExtensionMethodInfos_Gen")).FirstOrDefault(x => x != null);
+                select assembly.GetType("Puerts.ExtensionMethodInfos_Gen")).FirstOrDefault(x => x != null);
+            bool noGen = false;
             if (ExtensionMethodInfos_Gen == null)
+            {
                 ExtensionMethodInfos_Gen = (from assembly in AppDomain.CurrentDomain.GetAssemblies()
-                select assembly.GetType("PuertsIl2cpp.ExtensionMethodInfos_Gen_Internal")).FirstOrDefault(x => x != null);
+                                            select assembly.GetType("Puerts.ExtensionMethodInfos_Gen_Internal")).FirstOrDefault(x => x != null);
+                noGen = true;
+            }
             var TryLoadExtensionMethod = ExtensionMethodInfos_Gen.GetMethod("TryLoadExtensionMethod");
-            if (TryLoadExtensionMethod == null) return false;
-            LoadExtensionMethod = (Func<Type, IEnumerable<MethodInfo>>)Delegate.CreateDelegate(
-                typeof(Func<Type, IEnumerable<MethodInfo>>), null, TryLoadExtensionMethod);
+            if (TryLoadExtensionMethod == null)
+            {
+                LoadExtensionMethod = ReflectionGetExtensionMethodsOf;
+            }
+            if (noGen)
+            {
+                var staticGetExtensionMethodsOf = (Func<string, MethodInfo[]>)Delegate.CreateDelegate(
+                    typeof(Func<string, MethodInfo[]>), null, TryLoadExtensionMethod);
+                LoadExtensionMethod = (name) =>
+                {
+                    var ret = staticGetExtensionMethodsOf(name);
+                    if (ret == null || ret.Length == 0)
+                    {
+                        ret = ReflectionGetExtensionMethodsOf(name);
+                    }
+                    return ret;
+                };
+            }
+            else
+            {
+                LoadExtensionMethod = (Func<string, MethodInfo[]>)Delegate.CreateDelegate(
+                    typeof(Func<string, MethodInfo[]>), null, TryLoadExtensionMethod);
+            }
             return true;
         }
 	}
@@ -147,10 +291,8 @@ namespace PuertsIl2cpp
             foreach (var field in type.GetFields(BindingFlags.DeclaredOnly | BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic))
             {
                 // special handling circular definition by pointer
-                if (
-                    (field.FieldType.IsByRef || field.FieldType.IsPointer) &&
-                    field.FieldType.GetElementType() == type
-                ) {
+                if (field.FieldType.IsPointer || (field.FieldType.IsByRef && field.FieldType.GetElementType() == type))
+                {
                     sb.Append("Pv");
                 } 
                 else
@@ -233,6 +375,10 @@ namespace PuertsIl2cpp
             {
                 return TypeSignatures.SystemObject;
             }
+            else if (type.IsPointer)
+            {
+                return TypeSignatures.RefOrPointerPrefix + "v";
+            }
             else if (type.IsByRef || type.IsPointer)
             {
                 return TypeSignatures.RefOrPointerPrefix + GetTypeSignature(type.GetElementType());
@@ -259,7 +405,7 @@ namespace PuertsIl2cpp
             throw new NotSupportedException("no support type: " + type);
         }
 
-        public static string GetParameterSignature(ParameterInfo parameterInfo)
+        public static string GetParameterSignature(ParameterInfo parameterInfo, bool isBridge)
         {
             bool isParams = parameterInfo.IsDefined(typeof(ParamArrayAttribute), false) && parameterInfo.ParameterType.IsArray;
             if (isParams)
@@ -267,7 +413,7 @@ namespace PuertsIl2cpp
                 return "V" + GetTypeSignature(parameterInfo.ParameterType.GetElementType());
             }
 
-            if (parameterInfo.IsOptional)
+            if (!isBridge && parameterInfo.IsOptional)
             {
                 return "D" + GetTypeSignature(parameterInfo.ParameterType);
             }
@@ -292,7 +438,7 @@ namespace PuertsIl2cpp
             }
             return "";
         }
-        public static string GetMethodSignature(MethodBase methodBase, bool isDelegateInvoke = false, bool isExtensionMethod = false)
+        public static string GetMethodSignature(MethodBase methodBase, bool isBridge = false, bool isExtensionMethod = false)
         {
             string signature = "";
             if (methodBase is ConstructorInfo)
@@ -301,14 +447,14 @@ namespace PuertsIl2cpp
                 var constructorInfo = methodBase as ConstructorInfo;
                 foreach (var p in constructorInfo.GetParameters())
                 {
-                    signature += GetParameterSignature(p);
+                    signature += GetParameterSignature(p, isBridge);
                 }
             }
             else if (methodBase is MethodInfo)
             {
                 var methodInfo = methodBase as MethodInfo;
                 signature += GetTypeSignature(methodInfo.ReturnType);
-                if (!methodInfo.IsStatic && !isDelegateInvoke) signature += methodBase.DeclaringType == typeof(object) ? "T" : "t";
+                if (!methodInfo.IsStatic && !isBridge) signature += methodBase.DeclaringType == typeof(object) ? "T" : "t";
                 var parameterInfos = methodInfo.GetParameters();
                 for (int i = 0; i < parameterInfos.Length; ++i)
                 {
@@ -318,7 +464,7 @@ namespace PuertsIl2cpp
                     }
                     else
                     {
-                        signature += GetParameterSignature(parameterInfos[i]);
+                        signature += GetParameterSignature(parameterInfos[i], isBridge);
                     }
                 }
 
@@ -452,6 +598,3 @@ namespace PuertsIl2cpp
         }
     }
 }
-
-#endif
-#endif

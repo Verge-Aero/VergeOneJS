@@ -1079,7 +1079,7 @@ namespace OneJS.Dom {
                     styleBackgroundSize = new BackgroundSize(x, x); // If only one value is provided, use it for both x and y
                     return true;
                 }
-            } else if (value is Puerts.JSObject jsObj) {
+            } else if (value is Puerts.ScriptObject jsObj) {
                 if (jsObj.Get<int>("length") == 1) {
                     var l = jsObj.Get<float>("0");
                     styleBackgroundSize = new BackgroundSize(l, l);
@@ -1126,7 +1126,7 @@ namespace OneJS.Dom {
                         return true;
                     }
                 }
-            } else if (value is Puerts.JSObject jsObj) {
+            } else if (value is Puerts.ScriptObject jsObj) {
                 if (jsObj.Get<int>("length") == 1) {
                     var r = jsObj.Get<Repeat>("0");
                     styleBackgroundRepeat = new BackgroundRepeat(r, r);
@@ -1261,7 +1261,7 @@ namespace OneJS.Dom {
                 }
             } else if (value is Color c) {
                 __setBorderColors(_dom, c, c, c, c);
-            } else if (value is Puerts.JSObject jsObj) {
+            } else if (value is Puerts.ScriptObject jsObj) {
                 if (jsObj.Get<int>("length") == 1) {
                     var cc = jsObj.Get<Color>("0");
                     __setBorderColors(_dom, cc, cc, cc, cc);
@@ -1321,7 +1321,7 @@ namespace OneJS.Dom {
                 }
             } else if (value is double d) {
                 __setBorderWidths(_dom, (float)d, (float)d, (float)d, (float)d);
-            } else if (value is Puerts.JSObject jsObj) {
+            } else if (value is Puerts.ScriptObject jsObj) {
                 if (jsObj.Get<int>("length") == 1) {
                     var l = jsObj.Get<float>("0");
                     __setBorderWidths(_dom, l, l, l, l);
@@ -1386,7 +1386,7 @@ namespace OneJS.Dom {
             } else if (value is double d) {
                 var l = new Length((float)d);
                 __setBorderRadii(_dom, l, l, l, l);
-            } else if (value is Puerts.JSObject jsObj) {
+            } else if (value is Puerts.ScriptObject jsObj) {
                 if (jsObj.Get<int>("length") == 1) {
                     var l = new Length(jsObj.Get<float>("0"));
                     __setBorderRadii(_dom, l, l, l, l);
@@ -1504,7 +1504,7 @@ namespace OneJS.Dom {
             } else if (value is double d) {
                 var l = new Length((float)d);
                 __setMargins(_dom, l, l, l, l);
-            } else if (value is Puerts.JSObject jsObj) {
+            } else if (value is Puerts.ScriptObject jsObj) {
                 if (jsObj.Get<int>("length") == 1) {
                     var l = new Length(jsObj.Get<float>("0"));
                     __setMargins(_dom, l, l, l, l);
@@ -1569,7 +1569,7 @@ namespace OneJS.Dom {
             } else if (value is double d) {
                 var l = new Length((float)d);
                 __setPaddings(_dom, l, l, l, l);
-            } else if (value is Puerts.JSObject jsObj) {
+            } else if (value is Puerts.ScriptObject jsObj) {
                 if (jsObj.Get<int>("length") == 1) {
                     var l = new Length(jsObj.Get<float>("0"));
                     __setPaddings(_dom, l, l, l, l);
@@ -1644,7 +1644,7 @@ namespace OneJS.Dom {
             } else if (value is double d) {
                 styleRotate = new StyleRotate(new Rotate((float)d));
                 return true;
-            } else if (value is Puerts.JSObject jsObj) {
+            } else if (value is Puerts.ScriptObject jsObj) {
                 var f = jsObj.Get<float>("0");
                 styleRotate = new StyleRotate(new Rotate(f));
                 return true;
@@ -1687,7 +1687,7 @@ namespace OneJS.Dom {
             } else if (value is double d) {
                 styleScale = new StyleScale(new Scale(new Vector2((float)d, (float)d)));
                 return true;
-            } else if (value is Puerts.JSObject jsObj && jsObj.Get<int>("length") == 2) {
+            } else if (value is Puerts.ScriptObject jsObj && jsObj.Get<int>("length") == 2) {
                 var x = jsObj.Get<float>("0");
                 var y = jsObj.Get<float>("1");
                 styleScale = new StyleScale(new Scale(new Vector2(x, y)));
@@ -1775,7 +1775,7 @@ namespace OneJS.Dom {
             } else if (value is double d) {
                 styleTransformOrigin = new StyleTransformOrigin(new TransformOrigin((float)d, (float)d));
                 return true;
-            } else if (value is Puerts.JSObject jsObj && jsObj.Get<int>("length") == 2) {
+            } else if (value is Puerts.ScriptObject jsObj && jsObj.Get<int>("length") == 2) {
                 var x = jsObj.Get<float>("0");
                 var y = jsObj.Get<float>("1");
                 styleTransformOrigin = new StyleTransformOrigin(new TransformOrigin(x, y));
@@ -1832,7 +1832,7 @@ namespace OneJS.Dom {
             } else if (value is TimeValue tv) {
                 styleListTimeValue = new StyleList<TimeValue>(new List<TimeValue>() { tv });
                 return true;
-            } else if (value is Puerts.JSObject jsObj) {
+            } else if (value is Puerts.ScriptObject jsObj) {
                 var timeValues = new List<TimeValue>();
                 for (int i = 0; i < jsObj.Get<int>("length"); i++) {
                     var match = timeRegex.Match(jsObj.Get<string>(i.ToString()));
@@ -1889,7 +1889,7 @@ namespace OneJS.Dom {
             } else if (value is StylePropertyName spn) {
                 styleListPropertyName = new StyleList<StylePropertyName>(new List<StylePropertyName>() { spn });
                 return true;
-            } else if (value is Puerts.JSObject jsObj) {
+            } else if (value is Puerts.ScriptObject jsObj) {
                 var propertyNames = new List<StylePropertyName>();
                 for (int i = 0; i < jsObj.Get<int>("length"); i++) {
                     propertyNames.Add(jsObj.Get<string>(i.ToString()));
@@ -1932,7 +1932,7 @@ namespace OneJS.Dom {
             } else if (value is EasingFunction ef) {
                 styleListEasingFunction = new StyleList<EasingFunction>(new List<EasingFunction>() { ef });
                 return true;
-            } else if (value is Puerts.JSObject jsObj) {
+            } else if (value is Puerts.ScriptObject jsObj) {
                 var easingFunctions = new List<EasingFunction>();
                 for (int i = 0; i < jsObj.Get<int>("length"); i++) {
                     if (Enum.TryParse(jsObj.Get<string>(i.ToString()), true, out EasingMode easing)) {
@@ -1986,7 +1986,7 @@ namespace OneJS.Dom {
             } else if (value is Vector3 v3) {
                 styleTranslate = new StyleTranslate(new Translate(v3.x, v3.y));
                 return true;
-            } else if (value is Puerts.JSObject jsObj && jsObj.Get<int>("length") == 2) {
+            } else if (value is Puerts.ScriptObject jsObj && jsObj.Get<int>("length") == 2) {
                 var x = jsObj.Get<float>("0");
                 var y = jsObj.Get<float>("1");
                 styleTranslate = new StyleTranslate(new Translate(x, y));
@@ -2112,7 +2112,7 @@ namespace OneJS.Dom {
             }
 
             // JS array support (accept array of function strings or a single CSS string)
-            if (value is Puerts.JSObject js) {
+            if (value is Puerts.ScriptObject js) {
                 var list = new List<FilterFunction>();
                 int len = js.Get<int>("length");
                 for (int i = 0; i < len; i++) {

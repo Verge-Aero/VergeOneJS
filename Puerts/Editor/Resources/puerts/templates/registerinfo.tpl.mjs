@@ -1,6 +1,6 @@
 /*
 * Tencent is pleased to support the open source community by making Puerts available.
-* Copyright (C) 2020 THL A29 Limited, a Tencent company.  All rights reserved.
+* Copyright (C) 2020 Tencent.  All rights reserved.
 * Puerts is licensed under the BSD 3-Clause License, except for the third-party components listed in the file 'LICENSE' which may be subject to their corresponding license terms. 
 * This file is subject to the terms and conditions defined in file 'LICENSE', which is part of this source code package.
 */
@@ -25,7 +25,7 @@ namespace PuertsStaticWrap
         {
             return new RegisterInfo 
             {
-#if !EXPERIMENTAL_IL2CPP_PUERTS
+#if PUERTS_DISABLE_IL2CPP_OPTIMIZATION
                 BlittableCopy = ${item.BlittableCopy},
 #endif
 
@@ -33,7 +33,7 @@ namespace PuertsStaticWrap
                 {
                     ${FOR(listToJsArray(item.Members), member=> `
                     {"${member.Name}${member.IsStatic ? '_static' : ''}", new MemberRegisterInfo { Name = "${member.Name}", IsStatic = ${member.IsStatic}, MemberType = MemberType.${member.MemberType}, UseBindingMode = BindingMode.${member.UseBindingMode}
-#if !EXPERIMENTAL_IL2CPP_PUERTS
+#if PUERTS_DISABLE_IL2CPP_OPTIMIZATION
                     ${member.UseBindingMode == 'FastBinding' ? referWrapperMember(item.WrapperName, member.Constructor, member.Method, member.PropertyGetter, member.PropertySetter) : ''}
 #endif
                     }},
@@ -50,7 +50,7 @@ namespace PuertsStaticWrap
                 jsEnv.AddRegisterInfoGetter(typeof(${CS.Puerts.TypeExtensions.GetFriendlyName(item.Type)}), GetRegisterInfo_${item.WrapperName});`
                 if (item.BlittableCopy) {
                     ret += `
-#if !EXPERIMENTAL_IL2CPP_PUERTS
+#if PUERTS_DISABLE_IL2CPP_OPTIMIZATION
                 ${item.BlittableCopy ? item.WrapperName + ".InitBlittableCopy(jsEnv);": ""}                    
 #endif`
                 }

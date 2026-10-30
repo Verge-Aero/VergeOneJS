@@ -1,6 +1,6 @@
 /*
 * Tencent is pleased to support the open source community by making Puerts available.
-* Copyright (C) 2020 THL A29 Limited, a Tencent company.  All rights reserved.
+* Copyright (C) 2020 Tencent.  All rights reserved.
 * Puerts is licensed under the BSD 3-Clause License, except for the third-party components listed in the file 'LICENSE' which may be subject to their corresponding license terms. 
 * This file is subject to the terms and conditions defined in file 'LICENSE', which is part of this source code package.
 */
@@ -33,6 +33,7 @@ namespace Puerts
         string Resolve(string specifier, string referrer);
     }
 
+    /*
 #if ENABLE_IL2CPP
     [UnityEngine.Scripting.Preserve]
 #endif
@@ -40,8 +41,7 @@ namespace Puerts
     {
         void OnBuiltinLoaded(JsEnv env);
     }
-
-
+    */
 
 #if ENABLE_IL2CPP
     [UnityEngine.Scripting.Preserve]
@@ -87,10 +87,9 @@ namespace Puerts
 #endif
         public bool FileExists(string filepath)
         {
-#if UNITY_WEBGL && !UNTIY_EDITOR
+#if UNITY_WEBGL && !UNITY_EDITOR
             return true;
-#endif
-#if PUERTS_GENERAL
+#elif PUERTS_GENERAL
             return File.Exists(Path.Combine(root, filepath));
 #else 
             string pathToUse = this.PathToUse(filepath);

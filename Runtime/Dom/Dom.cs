@@ -388,7 +388,7 @@ namespace OneJS.Dom {
                     var genericArgs = pi.PropertyType.GetGenericArguments();
                     if (pi.PropertyType.IsEnum) {
                         val = Convert.ToInt32(val);
-                    } else if (val is JSObject jsObj && jsObj.Get<int>("length") > 0) {
+                    } else if (val is ScriptObject jsObj && jsObj.Get<int>("length") > 0) {
                         var length = jsObj.Get<int>("length");
                         var objAry = new object[length];
                         for (var i = 0; i < length; i++) {

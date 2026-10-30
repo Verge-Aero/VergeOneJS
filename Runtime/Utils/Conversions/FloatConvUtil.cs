@@ -3,7 +3,7 @@ using Unity.Mathematics;
 
 namespace OneJS.Utils {
     public class FloatConvUtil {
-        public static float[] CreateFloatBuffer(JSObject obj) {
+        public static float[] CreateFloatBuffer(ScriptObject obj) {
             var length = obj.Get<int>("length");
             var buffer = new float[length];
             for (var i = 0; i < length; i++) {

@@ -4,75 +4,6 @@ var exportDLL = {
         if (!global.PuertsWebGL) {
             throw new Error('cannot found PuertsWebGL script. please find some way to load puerts-runtime.js');
         }
-
-        // ---------------------------------------------------------------------------  
-        // Unity 6 / Emscripten 3.x compatibility  
-        // ---------------------------------------------------------------------------  
-        if (typeof updateGlobalBufferAndViews === "undefined") {  
-            var updateGlobalBufferAndViews = function (buf) {  
-                if (typeof updateMemoryViews === "function") {  
-                    return updateMemoryViews(buf);  
-                }  
-                // Fallback – rebuild the typed-array views ourselves.  
-                Module.HEAP8  = HEAP8  = new Int8Array(buf);  
-                Module.HEAPU8 = HEAPU8 = new Uint8Array(buf);  
-                Module.HEAP16 = HEAP16 = new Int16Array(buf);  
-                Module.HEAP32 = HEAP32 = new Int32Array(buf);  
-                Module.HEAPU16 = HEAPU16 = new Uint16Array(buf);  
-                Module.HEAPU32 = HEAPU32 = new Uint32Array(buf);  
-                Module.HEAPF32 = HEAPF32 = new Float32Array(buf);  
-                Module.HEAPF64 = HEAPF64 = new Float64Array(buf);  
-            };  
-        }  
-
-        if (typeof UTF16ToString === "undefined") {  
-            if (Module && Module.UTF16ToString) {  
-                var UTF16ToString = Module.UTF16ToString  
-            } else {  
-                const decoder = new TextDecoder("utf-16le")  
-                var UTF16ToString = function (ptr) {  
-                    let end = ptr  
-                    while (HEAPU16[end >> 1] !== 0) end += 2  
-                    return decoder.decode(HEAPU8.subarray(ptr, end))  
-                }  
-            }  
-        }  
-        if (typeof stringToUTF16 === "undefined") {  
-            var stringToUTF16 = function (str, outPtr, maxBytes) {  
-                const maxChars = maxBytes ? (maxBytes >> 1) - 1 : str.length  
-                for (let i = 0; i < Math.min(str.length, maxChars); i++) HEAPU16[(outPtr >> 1) + i] = str.charCodeAt(i)  
-                HEAPU16[(outPtr >> 1) + Math.min(str.length, maxChars)] = 0  
-            }  
-        }  
-        if (typeof lengthBytesUTF16 === "undefined") {  
-            var lengthBytesUTF16 = str => (str.length << 1) + 2  
-        }  
-        
-        if (typeof _setTempRet0 === "undefined") {  
-            var __tempRet0 = 0  
-            var _setTempRet0 = v => { __tempRet0 = v | 0 }  
-        }  
-        if (typeof _getTempRet0 === "undefined") {  
-            var _getTempRet0 = () => __tempRet0 | 0  
-        }  
-
-        if (typeof addFunction === "undefined") {  
-            const table = Module.wasmTable || wasmTable   // whichever Unity exposes  
-            var addFunction = function (jsFunc /*, sig */) {  
-                const idx = table.length  
-                table.grow(1)  
-                table.set(idx, jsFunc)  
-                return idx  
-            }  
-        }  
-        if (typeof removeFunction === "undefined") {  
-            const table = Module.wasmTable || wasmTable  
-            var removeFunction = function (idx) {  
-                // Emscripten no longer shrinks the table – just replace entry with a noop  
-                table.set(idx, () => {})  
-            }  
-        }
-
         let oldUpdateGlobalBufferAndViews = updateGlobalBufferAndViews;
         updateGlobalBufferAndViews = function (buf) {
             oldUpdateGlobalBufferAndViews(buf);
@@ -109,9 +40,31 @@ var exportDLL = {
             InjectPapiGLNativeImpl: Module._InjectPapiGLNativeImpl,
             PApiCallbackWithScope: Module._PApiCallbackWithScope,
             PApiConstructorWithScope: Module._PApiConstructorWithScope,
-            WasmAdd: Module._WasmAdd,
-            IndirectWasmAdd: Module._IndirectWasmAdd,
-            GetWasmAddPtr: Module._GetWasmAddPtr,
+            
+            find_class_by_id: Module._find_class_by_id,
+            load_class_by_id: Module._load_class_by_id,
+            get_class_name: Module._get_class_name,
+            get_class_initialize: Module._get_class_initialize,
+            get_class_finalize: Module._get_class_finalize,
+            get_class_type_id: Module._get_class_type_id,
+            get_class_super_type_id: Module._get_class_super_type_id,
+            get_class_methods: Module._get_class_methods,
+            get_class_functions: Module._get_class_functions,
+            get_class_properties: Module._get_class_properties,
+            get_class_variables: Module._get_class_variables,
+            get_next_property_info: Module._get_next_property_info,
+            get_next_function_info: Module._get_next_function_info,
+            get_property_info_name: Module._get_property_info_name,
+            get_property_info_getter: Module._get_property_info_getter,
+            get_property_info_setter: Module._get_property_info_setter,
+            get_function_info_name: Module._get_function_info_name,
+            get_function_info_callback: Module._get_function_info_callback,
+            get_class_data: Module._get_class_data,
+            get_class_on_enter: Module._get_class_on_enter,
+            get_class_on_exit: Module._get_class_on_exit,
+            get_property_info_getter_data: Module._get_property_info_getter_data,
+            get_property_info_setter_data: Module._get_property_info_setter_data,
+            get_function_info_data: Module._get_function_info_data,
             
             HEAP8,
             HEAPU8,
@@ -217,18 +170,21 @@ var exportDLL = {
     "InspectorTick",
     "LogicTick",
     "SetLogCallback",
+    "TerminateExecution",
+    "GetWebGLPapiVersion",
     "GetWebGLFFIApi",
-    "GetWebGLPapiEnvRef",
-    "GetQjsFFIApi", // declare for compile
-    "GetQjsPapiEnvRef", // declare for compile
-    "GetRegsterApi",
-    "pesapi_alloc_property_descriptors",
-    "pesapi_define_class",
-    "pesapi_get_class_data",
-    "pesapi_on_class_not_found",
-    "pesapi_set_method_info",
-    "pesapi_set_property_info",
-    "pesapi_trace_native_object_lifecycle",
+    "CreateWebGLPapiEnvRef",
+    "TranToString",
+    //"GetQjsFFIApi", // declare for compile
+    //"GetQjsPapiEnvRef", // declare for compile
+    //"GetRegsterApi",
+    //"pesapi_alloc_property_descriptors",
+    //"pesapi_define_class",
+    //"pesapi_get_class_data",
+    //"pesapi_on_class_not_found",
+    //"pesapi_set_method_info",
+    //"pesapi_set_property_info",
+    //"pesapi_trace_native_object_lifecycle",
     "pesapi_create_array_js",
     "pesapi_create_object_js",
     "pesapi_create_function_js",
@@ -252,7 +208,9 @@ var exportDLL = {
     "pesapi_call_function_js",
     "pesapi_eval_js",
     "pesapi_global_js",
-    "pesapi_set_env_private_js"
+    "pesapi_set_env_private_js",
+    "pesapi_trace_native_object_lifecycle_js",
+    "pesapi_set_registry_js"
 ].forEach(function (methodName) {
 
     exportDLL[methodName] = new Function(

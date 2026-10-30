@@ -53,9 +53,7 @@ namespace OneJS.Editor {
 
         [MenuItem("Tools/OneJS/Generate StaticWrappers", false)]
         static void GenerateStaticWrappers() {
-            UnityMenu.ClearAll();
-            UnityMenu.GenerateCode();
-            UnityMenu.GenRegisterInfo();
+            UnityMenu.GenerateStaticWrappers();
         }
 
         [MenuItem("Tools/OneJS/Open GeneratedCode Folder", false)]

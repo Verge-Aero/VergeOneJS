@@ -1,6 +1,6 @@
 /*
  * Tencent is pleased to support the open source community by making Puerts available.
- * Copyright (C) 2020 THL A29 Limited, a Tencent company.  All rights reserved.
+ * Copyright (C) 2020 Tencent.  All rights reserved.
  * Puerts is licensed under the BSD 3-Clause License, except for the third-party components listed in the file 'LICENSE' which may be subject to their corresponding license terms. 
  * This file is subject to the terms and conditions defined in file 'LICENSE', which is part of this source code package.
  */ 
@@ -63,6 +63,11 @@ if (UnityEngine_Debug || !global.console) {
         if (console_org) console_org.error.apply(null, Array.prototype.slice.call(arguments));
         UnityEngine_Debug.LogError(toString(arguments));
     }
+
+    console.debug = function() {
+        if (console_org) console_org.debug.apply(null, Array.prototype.slice.call(arguments));
+        UnityEngine_Debug.Log(toString(arguments));
+    }
     
     console.trace = function() {
         if (console_org) console_org.trace.apply(null, Array.prototype.slice.call(arguments));
@@ -82,6 +87,14 @@ if (UnityEngine_Debug || !global.console) {
     const timeRecorder = new Map();
     console.time = function(name){
         timeRecorder.set(name,+new Date);
+    }
+    console.timeLog = function(name, ...args){
+        const startTime = timeRecorder.get(name);
+        if(startTime){
+            console.log(String(name)+": "+(+new Date - startTime)+" ms", ...args);
+        }else{
+            console.warn("Timer '" + String(name)+ "' does not exist");
+        };
     }
     console.timeEnd = function(name){
         const startTime = timeRecorder.get(name);

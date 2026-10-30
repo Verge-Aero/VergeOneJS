@@ -9,17 +9,17 @@ namespace OneJS.Utils {
     public class GenericDelegateWrapper {
         JsEnv _jsEnv;
         EventInfo _eventInfo;
-        GenericDelegate _handler;
+        ScriptObject _handler;
 
         Delegate _del;
 
-        public static Delegate Wrap(JsEnv jsEnv, EventInfo eventInfo, GenericDelegate handler) =>
+        public static Delegate Wrap(JsEnv jsEnv, EventInfo eventInfo, ScriptObject handler) =>
             new GenericDelegateWrapper(jsEnv, eventInfo, handler).GetWrapped();
 
         /// <summary>
         /// https://nondisplayable.ca/2017/03/31/using-reflection-to-bind-lambda-to-event-handler.html
         /// </summary>
-        public GenericDelegateWrapper(JsEnv jsEnv, EventInfo eventInfo, GenericDelegate handler) {
+        public GenericDelegateWrapper(JsEnv jsEnv, EventInfo eventInfo, ScriptObject handler) {
             _jsEnv = jsEnv;
             _eventInfo = eventInfo;
             _handler = handler;
@@ -51,41 +51,23 @@ namespace OneJS.Utils {
         }
 
         public Action GetAction() {
-            return () => _handler.Action();
+            return _jsEnv.Eval<Func<ScriptObject, Action>>("handler => (...args) => handler(...args)")(_handler);
         }
 
         public Action<A> GetAction<A>() {
-            return (a) => {
-                // var aa = JsValue.FromObject(_engine, a);
-                _handler.Action(a);
-            };
+            return _jsEnv.Eval<Func<ScriptObject, Action<A>>>("handler => (...args) => handler(...args)")(_handler);
         }
 
         public Action<A, B> GetAction<A, B>() {
-            return (a, b) => {
-                // var aa = JsValue.FromObject(_engine, a);
-                // var bb = JsValue.FromObject(_engine, b);
-                _handler.Action(a, b);
-            };
+            return _jsEnv.Eval<Func<ScriptObject, Action<A, B>>>("handler => (...args) => handler(...args)")(_handler);
         }
 
         public Action<A, B, C> GetAction<A, B, C>() {
-            return (a, b, c) => {
-                // var aa = JsValue.FromObject(_engine, a);
-                // var bb = JsValue.FromObject(_engine, b);
-                // var cc = JsValue.FromObject(_engine, c);
-                _handler.Action(a, b, c);
-            };
+            return _jsEnv.Eval<Func<ScriptObject, Action<A, B, C>>>("handler => (...args) => handler(...args)")(_handler);
         }
 
         public Action<A, B, C, D> GetAction<A, B, C, D>() {
-            return (a, b, c, d) => {
-                // var aa = JsValue.FromObject(_engine, a);
-                // var bb = JsValue.FromObject(_engine, b);
-                // var cc = JsValue.FromObject(_engine, c);
-                // var dd = JsValue.FromObject(_engine, d);
-                _handler.Action(a, b, c, d);
-            };
+            return _jsEnv.Eval<Func<ScriptObject, Action<A, B, C, D>>>("handler => (...args) => handler(...args)")(_handler);
         }
     }
 }
